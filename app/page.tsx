@@ -112,11 +112,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col xl:flex-row gap-8 items-start">
-      <main className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto">
+    <div className="flex-1 w-full flex flex-col items-center py-12">
       
-      {/* Hero Header */}
-      <div className="text-center max-w-3xl mb-12 w-full">
+      {/* Hero Header - Full Width Centered */}
+      <div className="text-center max-w-3xl mb-12 w-full px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 mb-6 font-medium text-sm border border-blue-500/20">
           <Sparkles className="w-4 h-4" />
           100% Free - No Sign Up Required
@@ -128,6 +127,10 @@ export default function Home() {
           Type your text below to instantly generate cool fonts for Instagram, TikTok, Twitter, and Discord. Just click to copy!
         </p>
       </div>
+
+      {/* Main Content Layout Wrapper */}
+      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col xl:flex-row gap-8 items-start relative">
+        <main className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto">
 
       {/* Primary Ad Zone 1 (Top) */}
       <div className="w-full max-w-4xl h-[90px] md:h-[150px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-12">
@@ -286,14 +289,15 @@ export default function Home() {
         </p>
       </section>
 
-      </main>
+        </main>
 
-      {/* Right Sidebar Ad Zone */}
-      <aside className="hidden xl:flex w-[300px] flex-col shrink-0">
-        <div className="w-full h-[600px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 sticky top-12">
-          <span className="text-sm uppercase tracking-wider font-semibold text-center px-4 leading-relaxed">Vertical<br/>Advertisement<br/>Space</span>
-        </div>
-      </aside>
+        {/* Right Sidebar Ad Zone - Sticky */}
+        <aside className="hidden xl:flex w-[300px] flex-col shrink-0 sticky top-12 h-[600px]">
+          <div className="w-full h-full bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 shadow-xl">
+            <span className="text-sm uppercase tracking-wider font-semibold text-center px-4 leading-relaxed">Vertical<br/>Advertisement<br/>Space</span>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
