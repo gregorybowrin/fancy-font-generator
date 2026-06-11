@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check, Sparkles, ChevronLeft, ChevronRight, LayoutGrid, GalleryHorizontal } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Copy, Check, Sparkles, ChevronLeft, ChevronRight, LayoutGrid, GalleryHorizontal, Shuffle } from "lucide-react";
 
 // The Unicode conversion engine
 const alphabets = {
@@ -21,6 +21,33 @@ const alphabets = {
   monospace: "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉",
 };
 
+const upsideDownMap: Record<string, string> = {
+  a: "ɐ", b: "q", c: "ɔ", d: "p", e: "ǝ", f: "ɟ", g: "ƃ", h: "ɥ", i: "ᴉ",
+  j: "ɾ", k: "ʞ", l: "l", m: "ɯ", n: "u", o: "o", p: "d", q: "b", r: "ɹ",
+  s: "s", t: "ʇ", u: "n", v: "ʌ", w: "ʍ", x: "x", y: "ʎ", z: "z",
+  A: "∀", B: "𐐒", C: "Ɔ", D: "◖", E: "Ǝ", F: "Ⅎ", G: "⅁", H: "H", I: "I",
+  J: "ſ", K: "⋊", L: "˥", M: "W", N: "N", O: "O", P: "Ԁ", Q: "Ό", R: "ᴚ",
+  S: "S", T: "⊥", U: "∩", V: "Λ", W: "M", X: "X", Y: "⅄", Z: "Z",
+  "1": "Ɩ", "2": "ᄅ", "3": "Ɛ", "4": "ㄣ", "5": "ϛ", "6": "9", "7": "ㄥ", "8": "8", "9": "6", "0": "0",
+  ",": "'", ".": "˙", "?": "¿", "!": "¡", "\"": "„", "'": ",", "`": ",", "(": ")", ")": "(", "[": "]", "]": "[", "{": "}", "}": "{", "<": ">", ">": "<", "&": "℘", "_": "‾"
+};
+
+const ZALGO_UP = ['\u030d', '\u030e', '\u0304', '\u0305', '\u033f', '\u0311', '\u0306', '\u0310', '\u0352', '\u0357', '\u0351', '\u0307', '\u0308', '\u030a', '\u0342', '\u0343', '\u0359', '\u034a', '\u034b', '\u034c', '\u0303', '\u0302', '\u030c', '\u0350', '\u0300', '\u0301', '\u030b', '\u030f', '\u0312', '\u0313', '\u0314', '\u033d', '\u0309', '\u0363', '\u0364', '\u0365', '\u0366', '\u0367', '\u0368', '\u0369', '\u036a', '\u036b', '\u036c', '\u036d', '\u036e', '\u036f', '\u033e', '\u035b', '\u0346', '\u031a'];
+const ZALGO_DOWN = ['\u0316', '\u0317', '\u0318', '\u0319', '\u031c', '\u031d', '\u0320', '\u0324', '\u0325', '\u0326', '\u0329', '\u032a', '\u032b', '\u032c', '\u032d', '\u032e', '\u032f', '\u0330', '\u0331', '\u0332', '\u0333', '\u0339', '\u033a', '\u033b', '\u033c', '\u0345', '\u0347', '\u0348', '\u0349', '\u034d', '\u034e', '\u0353', '\u0354', '\u0355', '\u0356', '\u0359', '\u035a', '\u0323'];
+const ZALGO_MID = ['\u0315', '\u031b', '\u0340', '\u0341', '\u0358', '\u0321', '\u0322', '\u0327', '\u0328', '\u0334', '\u0335', '\u0336', '\u034f', '\u035c', '\u035d', '\u035e', '\u035f', '\u0360', '\u0362', '\u0338', '\u0337', '\u0361', '\u0489'];
+
+function generateZalgo(text: string) {
+  return Array.from(text).map(char => {
+    let newChar = char;
+    if (/[a-zA-Z0-9]/.test(char)) {
+      for (let i = 0; i < Math.floor(Math.random() * 4) + 1; i++) newChar += ZALGO_UP[Math.floor(Math.random() * ZALGO_UP.length)];
+      for (let i = 0; i < Math.floor(Math.random() * 2) + 1; i++) newChar += ZALGO_MID[Math.floor(Math.random() * ZALGO_MID.length)];
+      for (let i = 0; i < Math.floor(Math.random() * 4) + 1; i++) newChar += ZALGO_DOWN[Math.floor(Math.random() * ZALGO_DOWN.length)];
+    }
+    return newChar;
+  }).join('');
+}
+
 const DECORATIONS = {
   sparkles: { prefix: "✧･ﾟ: *✧･ﾟ:* ", suffix: " *:･ﾟ✧*:･ﾟ✧" },
   ribbon: { prefix: "⋆ 🎀  ", suffix: "  🎀 ⋆" },
@@ -39,8 +66,20 @@ const DECORATIONS = {
 const convertText = (text: string, font: string, decoration: keyof typeof DECORATIONS) => {
   let processedText = text;
 
-  // Handle combining characters or font mappings
-  if (font !== "normal") {
+  if (font === "zalgo") {
+    processedText = generateZalgo(text);
+  } else if (font === "reverse") {
+    processedText = Array.from(text).reverse().join('');
+  } else if (font === "upsideDown") {
+    processedText = Array.from(text).map(char => upsideDownMap[char] || char).reverse().join('');
+  } else if (font === "emoji") {
+    processedText = Array.from(text).map(char => {
+      if (/[a-zA-Z]/.test(char)) {
+        return String.fromCodePoint(char.toLowerCase().charCodeAt(0) + 127365) + " ";
+      }
+      return char;
+    }).join('');
+  } else if (font !== "normal") {
     if (font === "slash") {
       processedText = Array.from(text).map(char => char + '\u0336').join('');
     } else if (font === "underline") {
@@ -77,6 +116,10 @@ const FONT_STYLES: FontStyle[] = [
   { name: "Ribbon Serif", id: "ribbonSerif", font: "serifItalic", decoration: "ribbon" },
   { name: "Shooting Star Bold", id: "shootingStarBold", font: "sansBold", decoration: "shootingStar" },
   { name: "Star Brackets", id: "starBrackets", font: "monospace", decoration: "brackets" },
+  { name: "Emoji Blocks", id: "emojiBlocks", font: "emoji", decoration: "none" },
+  { name: "Zalgo Glitch", id: "zalgoGlitch", font: "zalgo", decoration: "none" },
+  { name: "Upside Down", id: "upsideDown", font: "upsideDown", decoration: "none" },
+  { name: "Reversed Text", id: "reversedText", font: "reverse", decoration: "none" },
   { name: "Angel Wings", id: "angelWings", font: "script", decoration: "wings" },
   { name: "Cloud Sans", id: "cloudSans", font: "sans", decoration: "cloud" },
   { name: "Sword Gothic", id: "swordGothic", font: "fraktur", decoration: "sword" },
@@ -89,31 +132,54 @@ const FONT_STYLES: FontStyle[] = [
   { name: "Classic Strikethrough", id: "slash", font: "slash", decoration: "none" },
 ];
 
+const FUN_TEXTS = [
+  "Aesthetics are everything",
+  "Stay hydrated",
+  "Just keep swimming",
+  "Vibes only",
+  "Coding is fun",
+  "Never give up",
+  "To the moon 🚀",
+  "Fancy Text Generator",
+  "Good vibes all day",
+  "Dream big!"
+];
+
 export default function Home() {
   const [inputText, setInputText] = useState("Fancy Text Generator");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   // New State for View Mode and Rolodex
   const [viewMode, setViewMode] = useState<"rolodex" | "grid">("rolodex");
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleCopy = (text: string, id: string) => {
+  const handleCopy = (text: string, id: string, fontName: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setToastMessage(`Copied ${fontName} to clipboard!`);
+    
+    setTimeout(() => {
+      setCopiedId(null);
+      setToastMessage(null);
+    }, 3000);
   };
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % FONT_STYLES.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + FONT_STYLES.length) % FONT_STYLES.length);
-  };
+  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % FONT_STYLES.length);
+  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + FONT_STYLES.length) % FONT_STYLES.length);
+  const randomizeInput = () => setInputText(FUN_TEXTS[Math.floor(Math.random() * FUN_TEXTS.length)]);
 
   return (
-    <div className="flex-1 w-full flex flex-col items-center py-12">
+    <div className="flex-1 w-full flex flex-col items-center py-12 relative overflow-x-hidden">
       
+      {/* Toast Notification */}
+      <div className={`fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-neutral-800 border border-neutral-700 text-white px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 transform ${toastMessage ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0 pointer-events-none'}`}>
+        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+          <Check className="w-5 h-5" />
+        </div>
+        <p className="font-medium">{toastMessage}</p>
+      </div>
+
       {/* Hero Header - Full Width Centered */}
       <div className="text-center max-w-3xl mb-12 w-full px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 mb-6 font-medium text-sm border border-blue-500/20">
@@ -132,162 +198,174 @@ export default function Home() {
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col xl:flex-row gap-8 items-start relative">
         <main className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto">
 
-      {/* Primary Ad Zone 1 (Top) */}
-      <div className="w-full max-w-4xl h-[90px] md:h-[150px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-12">
-        <span className="text-sm uppercase tracking-wider font-semibold">Advertisement Space</span>
-      </div>
+          {/* Primary Ad Zone 1 (Top) */}
+          <div className="w-full max-w-4xl h-[90px] md:h-[150px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-12">
+            <span className="text-sm uppercase tracking-wider font-semibold">Advertisement Space</span>
+          </div>
 
-      {/* Main Input Area */}
-      <div className="w-full max-w-4xl mb-8 relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type your text here..."
-          className="relative w-full bg-neutral-900 border border-neutral-700 rounded-2xl p-6 text-xl md:text-2xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none transition-all shadow-xl"
-          rows={2}
-        />
-      </div>
-
-      {/* View Toggle Bar */}
-      <div className="flex bg-neutral-900 rounded-xl p-1 mb-8 border border-neutral-800 w-max mx-auto shadow-lg">
-        <button 
-          onClick={() => setViewMode('rolodex')} 
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-            viewMode === 'rolodex' 
-              ? 'bg-neutral-800 text-white shadow-sm ring-1 ring-neutral-700' 
-              : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
-          }`}
-        >
-          <GalleryHorizontal className="w-4 h-4"/> 
-          Rolodex View
-        </button>
-        <button 
-          onClick={() => setViewMode('grid')} 
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-            viewMode === 'grid' 
-              ? 'bg-neutral-800 text-white shadow-sm ring-1 ring-neutral-700' 
-              : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
-          }`}
-        >
-          <LayoutGrid className="w-4 h-4"/> 
-          Grid View
-        </button>
-      </div>
-
-      {/* Dynamic Results Area */}
-      <div className="w-full max-w-5xl mb-12">
-        
-        {viewMode === "rolodex" ? (
-          /* Rolodex Mode */
-          <div className="glass rounded-3xl p-8 md:p-16 flex flex-col items-center justify-center min-h-[400px] relative shadow-2xl group overflow-hidden border border-neutral-700/50 bg-neutral-900/40">
-            
-            {/* Background Accent Glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none"></div>
-
-            {/* Navigation Buttons */}
-            <button 
-              onClick={handlePrev} 
-              className="absolute left-4 md:left-8 p-3 md:p-4 bg-neutral-800/80 hover:bg-neutral-700 rounded-full text-white transition-all transform active:scale-95 shadow-lg border border-neutral-700 z-10 hover:ring-2 hover:ring-blue-500/50"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button 
-              onClick={handleNext} 
-              className="absolute right-4 md:right-8 p-3 md:p-4 bg-neutral-800/80 hover:bg-neutral-700 rounded-full text-white transition-all transform active:scale-95 shadow-lg border border-neutral-700 z-10 hover:ring-2 hover:ring-blue-500/50"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-
-            {/* Current Font Display */}
-            <div className="flex flex-col items-center w-full px-16 md:px-24">
-              <span className="text-sm font-bold uppercase tracking-widest text-blue-400 mb-6 border border-blue-500/30 px-4 py-1.5 rounded-full bg-blue-500/10">
-                {FONT_STYLES[currentIndex].name}
-              </span>
-              
-              <div className="w-full max-w-3xl bg-black/40 rounded-2xl p-8 mb-8 border border-neutral-800/80 overflow-x-auto whitespace-nowrap scrollbar-hide shadow-inner text-center">
-                <p className="text-3xl md:text-4xl lg:text-5xl text-white leading-relaxed py-4">
-                  {inputText ? convertText(inputText, FONT_STYLES[currentIndex].font, FONT_STYLES[currentIndex].decoration) : FONT_STYLES[currentIndex].name}
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleCopy(
-                  inputText ? convertText(inputText, FONT_STYLES[currentIndex].font, FONT_STYLES[currentIndex].decoration) : FONT_STYLES[currentIndex].name, 
-                  FONT_STYLES[currentIndex].id
-                )}
-                className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:-translate-y-1 ${
-                  copiedId === FONT_STYLES[currentIndex].id
-                    ? "bg-green-500 text-white" 
-                    : "bg-white text-black hover:bg-neutral-200"
-                }`}
-              >
-                {copiedId === FONT_STYLES[currentIndex].id ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                {copiedId === FONT_STYLES[currentIndex].id ? "Copied to Clipboard!" : "Copy Font"}
-              </button>
-
-              <div className="mt-8 flex gap-1">
-                {FONT_STYLES.map((_, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`h-1.5 rounded-full transition-all ${idx === currentIndex ? 'w-6 bg-blue-500' : 'w-1.5 bg-neutral-700'}`}
-                  />
-                ))}
+          {/* Main Input Area */}
+          <div className="w-full max-w-4xl mb-8 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative w-full bg-neutral-900 border border-neutral-700 rounded-2xl overflow-hidden shadow-xl focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Type your text here..."
+                className="w-full bg-transparent p-6 text-xl md:text-2xl text-white outline-none resize-none"
+                rows={2}
+              />
+              <div className="w-full border-t border-neutral-800 bg-neutral-900/80 px-4 py-3 flex justify-end">
+                <button 
+                  onClick={randomizeInput}
+                  className="flex items-center gap-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors bg-neutral-800 hover:bg-neutral-700 px-4 py-2 rounded-lg"
+                >
+                  <Shuffle className="w-4 h-4" />
+                  Randomize Text
+                </button>
               </div>
             </div>
           </div>
-        ) : (
-          /* Grid Mode */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FONT_STYLES.map((style) => {
-              const generatedText = inputText ? convertText(inputText, style.font, style.decoration) : style.name;
-              const isCopied = copiedId === style.id;
 
-              return (
-                <div 
-                  key={style.id}
-                  className="glass rounded-xl p-5 hover:bg-neutral-800/60 transition-colors flex flex-col border border-neutral-800"
+          {/* View Toggle Bar */}
+          <div className="flex bg-neutral-900 rounded-xl p-1 mb-8 border border-neutral-800 w-max mx-auto shadow-lg">
+            <button 
+              onClick={() => setViewMode('rolodex')} 
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                viewMode === 'rolodex' 
+                  ? 'bg-neutral-800 text-white shadow-sm ring-1 ring-neutral-700' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
+              }`}
+            >
+              <GalleryHorizontal className="w-4 h-4"/> 
+              Rolodex View
+            </button>
+            <button 
+              onClick={() => setViewMode('grid')} 
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                viewMode === 'grid' 
+                  ? 'bg-neutral-800 text-white shadow-sm ring-1 ring-neutral-700' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4"/> 
+              Grid View
+            </button>
+          </div>
+
+          {/* Dynamic Results Area */}
+          <div className="w-full max-w-5xl mb-12">
+            
+            {viewMode === "rolodex" ? (
+              /* Rolodex Mode */
+              <div className="glass rounded-3xl p-8 md:p-16 flex flex-col items-center justify-center min-h-[400px] relative shadow-2xl group overflow-hidden border border-neutral-700/50 bg-neutral-900/40">
+                
+                {/* Background Accent Glow */}
+                <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none"></div>
+
+                {/* Navigation Buttons */}
+                <button 
+                  onClick={handlePrev} 
+                  className="absolute left-4 md:left-8 p-3 md:p-4 bg-neutral-800/80 hover:bg-neutral-700 rounded-full text-white transition-all transform active:scale-95 shadow-lg border border-neutral-700 z-10 hover:ring-2 hover:ring-blue-500/50"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-neutral-400">
-                      {style.name}
-                    </span>
-                    <button
-                      onClick={() => handleCopy(generatedText, style.id)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
-                        isCopied 
-                          ? "bg-green-500/20 text-green-400" 
-                          : "bg-white text-black hover:bg-neutral-200"
-                      }`}
-                    >
-                      {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      {isCopied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <div className="flex-1 bg-black/40 rounded-lg p-4 overflow-x-auto whitespace-nowrap scrollbar-hide border border-neutral-800/50">
-                    <p className="text-2xl text-white">
-                      {generatedText}
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={handleNext} 
+                  className="absolute right-4 md:right-8 p-3 md:p-4 bg-neutral-800/80 hover:bg-neutral-700 rounded-full text-white transition-all transform active:scale-95 shadow-lg border border-neutral-700 z-10 hover:ring-2 hover:ring-blue-500/50"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+
+                {/* Current Font Display */}
+                <div className="flex flex-col items-center w-full px-16 md:px-24">
+                  <span className="text-sm font-bold uppercase tracking-widest text-blue-400 mb-6 border border-blue-500/30 px-4 py-1.5 rounded-full bg-blue-500/10">
+                    {FONT_STYLES[currentIndex].name}
+                  </span>
+                  
+                  <div className="w-full max-w-3xl bg-black/40 rounded-2xl p-8 mb-8 border border-neutral-800/80 overflow-x-auto whitespace-nowrap scrollbar-hide shadow-inner text-center">
+                    <p className="text-3xl md:text-4xl lg:text-5xl text-white leading-relaxed py-4">
+                      {inputText ? convertText(inputText, FONT_STYLES[currentIndex].font, FONT_STYLES[currentIndex].decoration) : FONT_STYLES[currentIndex].name}
                     </p>
                   </div>
+
+                  <button
+                    onClick={() => handleCopy(
+                      inputText ? convertText(inputText, FONT_STYLES[currentIndex].font, FONT_STYLES[currentIndex].decoration) : FONT_STYLES[currentIndex].name, 
+                      FONT_STYLES[currentIndex].id,
+                      FONT_STYLES[currentIndex].name
+                    )}
+                    className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:-translate-y-1 ${
+                      copiedId === FONT_STYLES[currentIndex].id
+                        ? "bg-green-500 text-white" 
+                        : "bg-white text-black hover:bg-neutral-200"
+                    }`}
+                  >
+                    {copiedId === FONT_STYLES[currentIndex].id ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                    {copiedId === FONT_STYLES[currentIndex].id ? "Copied!" : "Copy Font"}
+                  </button>
+
+                  <div className="mt-8 flex gap-1 flex-wrap justify-center max-w-sm">
+                    {FONT_STYLES.map((_, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`h-1.5 rounded-full transition-all mb-1 ${idx === currentIndex ? 'w-6 bg-blue-500' : 'w-1.5 bg-neutral-700'}`}
+                      />
+                    ))}
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              /* Grid Mode */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {FONT_STYLES.map((style) => {
+                  const generatedText = inputText ? convertText(inputText, style.font, style.decoration) : style.name;
+                  const isCopied = copiedId === style.id;
+
+                  return (
+                    <div 
+                      key={style.id}
+                      className="glass rounded-xl p-5 hover:bg-neutral-800/60 transition-colors flex flex-col border border-neutral-800"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-neutral-400">
+                          {style.name}
+                        </span>
+                        <button
+                          onClick={() => handleCopy(generatedText, style.id, style.name)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                            isCopied 
+                              ? "bg-green-500/20 text-green-400" 
+                              : "bg-white text-black hover:bg-neutral-200"
+                          }`}
+                        >
+                          {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {isCopied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <div className="flex-1 bg-black/40 rounded-lg p-4 overflow-x-auto whitespace-nowrap scrollbar-hide border border-neutral-800/50">
+                        <p className="text-2xl text-white">
+                          {generatedText}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Secondary Ad Zone 2 (Bottom) */}
-      <div className="w-full max-w-4xl h-[90px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-12">
-        <span className="text-sm uppercase tracking-wider font-semibold">Advertisement Space</span>
-      </div>
+          {/* Secondary Ad Zone 2 (Bottom) */}
+          <div className="w-full max-w-4xl h-[90px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-12">
+            <span className="text-sm uppercase tracking-wider font-semibold">Advertisement Space</span>
+          </div>
 
-      {/* SEO Content Section */}
-      <section className="w-full max-w-4xl prose prose-invert opacity-80">
-        <h2>How to use this Fancy Font Generator?</h2>
-        <p>
-          Simply type your normal text into the large box at the top of the page. Our tool will instantly convert your text into dozens of cool, fancy, and stylish unicode variants. Use our beautiful Rolodex view to flip through fonts in large text, or switch to Grid view to see all options at a glance. Find the font you like best, and click the &quot;Copy&quot; button. You can then paste it anywhere—your Instagram bio, TikTok comments, Twitter handle, or Discord messages!
-        </p>
-      </section>
+          {/* SEO Content Section */}
+          <section className="w-full max-w-4xl prose prose-invert opacity-80">
+            <h2>How to use this Fancy Font Generator?</h2>
+            <p>
+              Simply type your normal text into the large box at the top of the page. Our tool will instantly convert your text into dozens of cool, fancy, and stylish unicode variants. Use our beautiful Rolodex view to flip through fonts in large text, or switch to Grid view to see all options at a glance. Find the font you like best, and click the &quot;Copy&quot; button. You can then paste it anywhere—your Instagram bio, TikTok comments, Twitter handle, or Discord messages!
+            </p>
+          </section>
 
         </main>
 
