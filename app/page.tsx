@@ -112,7 +112,8 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-1 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+    <div className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col xl:flex-row gap-8 items-start">
+      <main className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto">
       
       {/* Hero Header */}
       <div className="text-center max-w-3xl mb-12 w-full">
@@ -285,6 +286,14 @@ export default function Home() {
         </p>
       </section>
 
-    </main>
+      </main>
+
+      {/* Right Sidebar Ad Zone */}
+      <aside className="hidden xl:flex w-[300px] flex-col shrink-0">
+        <div className="w-full h-[600px] bg-neutral-900/50 border border-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 sticky top-12">
+          <span className="text-sm uppercase tracking-wider font-semibold text-center px-4 leading-relaxed">Vertical<br/>Advertisement<br/>Space</span>
+        </div>
+      </aside>
+    </div>
   );
 }
